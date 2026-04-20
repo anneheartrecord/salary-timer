@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💰 今天赚了多少钱？</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', 'PingFang SC', sans-serif;
+      background: #fffbe6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    /* 飘落的钱符号背景 */
+    .money-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .coin {
+      position: absolute;
+      font-size: 1.5rem;
+      animation: fall linear infinite;
+      opacity: 0.18;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-60px) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(360deg); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      background: #fff;
+      border-radius: 28px;
+      border: 3px solid #ffd43b;
+      box-shadow: 6px 6px 0 #ffd43b;
+      padding: 36px 40px;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #aaa;
+      font-size: 0.88rem;
+      margin-bottom: 28px;
+    }
+
+    /* 表单 */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #eee;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      background: #fafafa;
+      color: #333;
+      transition: border 0.2s;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: #ffd43b;
+      background: #fff;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* 按钮 */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      margin-top: 6px;
+    }
+    .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 !important; }
+
+    .btn-start {
+      background: #ffd43b;
+      color: #333;
+      box-shadow: 0 4px 0 #e6b800;
+    }
+    .btn-start:hover { background: #ffca1f; }
+
+    .btn-stop {
+      background: #ff6b6b;
+      color: #fff;
+      box-shadow: 0 4px 0 #c0392b;
+    }
+    .btn-stop:hover { background: #ff5252; }
+
+    .btn-reset {
+      background: #f1f3f5;
+      color: #666;
+      box-shadow: 0 4px 0 #dee2e6;
+      margin-top: 10px;
+    }
+    .btn-reset:hover { background: #e9ecef; }
+
+    /* 结果展示 */
+    .result-box {
+      display: none;
+      margin-top: 28px;
+      text-align: center;
+      background: #fffbe6;
+      border-radius: 18px;
+      border: 2px dashed #ffd43b;
+      padding: 24px 20px;
+    }
+    .result-box.show { display: block; }
+
+    .earned-label {
+      font-size: 0.9rem;
+      color: #888;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .earned-amount {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: #2ecc71;
+      line-height: 1.1;
+      margin: 6px 0 4px;
+      transition: color 0.3s;
+    }
+    .earned-currency {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #2ecc71;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 18px;
+      gap: 8px;
+    }
+    .stat-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      flex: 1;
+      border: 1.5px solid #eee;
+    }
+    .stat-value {
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: #333;
+    }
+    .stat-label {
+      font-size: 0.72rem;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    /* 工作状态指示 */
+    .status-bar {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+      font-size: 0.88rem;
+      color: #888;
+      font-weight: 700;
+    }
+    .status-bar.show { display: flex; }
+    .pulse-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #2ecc71;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .pulse-dot.paused { background: #aaa; animation: none; }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.5; }
+    }
+
+    /* 彩蛋提示 */
+    .fun-tip {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: #bbb;
+      text-align: center;
+      min-height: 18px;
+      transition: color 0.3s;
+    }
+
+    /* 工资单位提示 */
+    .tip {
+      font-size: 0.78rem;
+      color: #ccc;
+      margin-top: 5px;
+    }
+
+    /* 动画 */
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .pop { animation: pop 0.15s ease; }
+  </style>
+</head>
+<body>
+
+<!-- 背景飘落钱 -->
+<div class="money-bg" id="moneyBg"></div>
+
+<div class="container">
+  <h1>💸 今天上班赚了多少？</h1>
+  <p class="subtitle">打工人必备计时器，实时感受搬砖价值 🧱</p>
+
+  <!-- 输入表单 -->
+  <div id="formSection">
+    <div class="form-group">
+      <label>💰 月薪（税前，元）</label>
+      <input type="number" id="monthlySalary" placeholder="例：15000" min="0" />
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label>📅 休息方式</label>
+        <select id="restType">
+          <option value="5">单休（周一到周六）</option>
+          <option value="10" selected>双休（周一到周五）</option>
+          <option value="7.5">大小周</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>⏰ 每天工作时长</label>
+        <select id="workHours">
+          <option value="6">6 小时</option>
+          <option value="7">7 小时</option>
+          <option value="8" selected>8 小时</option>
+          <option value="9">9 小时（996 预备）</option>
+          <option value="10">10 小时（准 996）</option>
+          <option value="12">12 小时（真·996）</option>
+        </select>
+      </div>
+    </div>
+    <p class="tip">* 以自然月均工作天数计算，不含法定假日</p>
+
+    <button class="btn btn-start" onclick="startCounting()">🚀 开始计算！</button>
+  </div>
+
+  <!-- 结果 -->
+  <div class="result-box" id="resultBox">
+    <div class="earned-label">今天已打工赚取</div>
+    <div>
+      <span class="earned-currency">¥</span>
+      <span class="earned-amount" id="earnedAmount">0.00</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="statPerHour">—</div>
+        <div class="stat-label">每小时 ¥</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statPerMin">—</div>
+        <div class="stat-label">每分钟 ¥</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statPerDay">—</div>
+        <div class="stat-label">今日日薪 ¥</div>
+      </div>
+    </div>
+
+    <div class="status-bar show" id="statusBar">
+      <div class="pulse-dot" id="pulseDot"></div>
+      <span id="statusText">正在打工中……</span>
+      <span id="elapsedTime" style="margin-left:4px;color:#bbb"></span>
+    </div>
+
+    <div class="fun-tip" id="funTip"></div>
+
+    <button class="btn btn-stop" id="toggleBtn" onclick="togglePause()">⏸ 摸鱼一下</button>
+    <button class="btn btn-reset" onclick="resetAll()">🔄 重新设置</button>
+  </div>
+</div>
+
+<script>
+  // ─── 背景飘落钱 ────────────────────────────────────────────────
+  const symbols = ['💰','💵','🪙','💴','💶','$','¥','€'];
+  const bg = document.getElementById('moneyBg');
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('div');
+    el.className = 'coin';
+    el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    el.style.left = Math.random() * 100 + '%';
+    el.style.animationDuration = (6 + Math.random() * 10) + 's';
+    el.style.animationDelay = (-Math.random() * 12) + 's';
+    el.style.fontSize = (1 + Math.random() * 1.2) + 'rem';
+    bg.appendChild(el);
+  }
+
+  // ─── 彩蛋提示 ─────────────────────────────────────────────────
+  const tips = [
+    '你每呼吸一次大约赚了 0.003 元 🌬️',
+    '刷了 3 秒手机，钱还在涨……',
+    '你的老板也在等你做完这个需求 👀',
+    '继续加油，离下班又近了一点点！',
+    '工资是打工精神的结晶 💎',
+    '摸鱼是一种艺术，你已入门 🐟',
+    '你值得被好好善待，包括被工资善待',
+    '每一秒都在证明你选择上班是正确的 ✅',
+    '老板此刻正在干嘛……不管了，钱在涨',
+    '滴滴……请继续搬砖，数字正在变大 🧱',
+  ];
+  let tipIdx = 0;
+
+  // ─── 状态 ─────────────────────────────────────────────────────
+  let totalSeconds = 0;
+  let timer = null;
+  let isPaused = false;
+  let perSecond = 0;
+  let dailyTotal = 0;
+  let startTimestamp = null;
+
+  function startCounting() {
+    const salary = parseFloat(document.getElementById('monthlySalary').value);
+    if (!salary || salary <= 0) {
+      document.getElementById('monthlySalary').focus();
+      document.getElementById('monthlySalary').style.borderColor = '#ff6b6b';
+      setTimeout(() => document.getElementById('monthlySalary').style.borderColor = '#eee', 1200);
+      return;
+    }
+
+    const restDays = parseFloat(document.getElementById('restType').value);  // 每月工作天数
+    const workHours = parseFloat(document.getElementById('workHours').value);
+
+    const workDaysPerMonth = restDays;
+    const dailySalary = salary / workDaysPerMonth;
+    const hourlyRate = dailySalary / workHours;
+    perSecond = hourlyRate / 3600;
+    dailyTotal = dailySalary;
+
+    // 填充 stats
+    document.getElementById('statPerHour').textContent = hourlyRate.toFixed(2);
+    document.getElementById('statPerMin').textContent = (hourlyRate / 60).toFixed(3);
+    document.getElementById('statPerDay').textContent = dailySalary.toFixed(2);
+
+    // 切换视图
+    document.getElementById('formSection').style.display = 'none';
+    document.getElementById('resultBox').classList.add('show');
+
+    // 开始计时
+    startTimestamp = Date.now();
+    totalSeconds = 0;
+    isPaused = false;
+    tick();
+    timer = setInterval(tick, 1000);
+    cycleTip();
+  }
+
+  function tick() {
+    if (isPaused) return;
+    totalSeconds++;
+    const earned = perSecond * totalSeconds;
+    const el = document.getElementById('earnedAmount');
+    el.textContent = earned.toFixed(4);
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+
+    // 经过时间
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    document.getElementById('elapsedTime').textContent =
+      `(${h > 0 ? h + 'h ' : ''}${m}m ${s}s)`;
+
+    // 颜色随金额变绿
+    const pct = Math.min(earned / dailyTotal, 1);
+    const r = Math.round(46 + (255 - 46) * (1 - pct));
+    const g = Math.round(204 - (204 - 180) * pct);
+    document.getElementById('earnedAmount').style.color = `rgb(${r},${g},60)`;
+    document.querySelector('.earned-currency').style.color = `rgb(${r},${g},60)`;
+  }
+
+  function togglePause() {
+    isPaused = !isPaused;
+    const btn = document.getElementById('toggleBtn');
+    const dot = document.getElementById('pulseDot');
+    const statusText = document.getElementById('statusText');
+    if (isPaused) {
+      btn.textContent = '▶️ 继续打工';
+      btn.className = 'btn btn-start';
+      dot.classList.add('paused');
+      statusText.textContent = '摸鱼中……（钱暂停涨了）';
+    } else {
+      btn.textContent = '⏸ 摸鱼一下';
+      btn.className = 'btn btn-stop';
+      dot.classList.remove('paused');
+      statusText.textContent = '正在打工中……';
+    }
+  }
+
+  function resetAll() {
+    clearInterval(timer);
+    timer = null;
+    totalSeconds = 0;
+    isPaused = false;
+    document.getElementById('formSection').style.display = 'block';
+    document.getElementById('resultBox').classList.remove('show');
+    document.getElementById('earnedAmount').textContent = '0.00';
+    document.getElementById('toggleBtn').textContent = '⏸ 摸鱼一下';
+    document.getElementById('toggleBtn').className = 'btn btn-stop';
+    document.getElementById('pulseDot').classList.remove('paused');
+    document.getElementById('statusText').textContent = '正在打工中……';
+    document.getElementById('elapsedTime').textContent = '';
+  }
+
+  function cycleTip() {
+    document.getElementById('funTip').textContent = tips[tipIdx % tips.length];
+    tipIdx++;
+    setTimeout(cycleTip, 5000);
+  }
+</script>
+</body>
+</html>
