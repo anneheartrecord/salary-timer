@@ -236,13 +236,6 @@
       margin-top: 5px;
     }
 
-    /* 动画 */
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-      100% { transform: scale(1); }
-    }
-    .pop { animation: pop 0.15s ease; }
   </style>
 </head>
 <body>
@@ -265,9 +258,9 @@
       <div class="form-group">
         <label>📅 休息方式</label>
         <select id="restType">
-          <option value="5">单休（周一到周六）</option>
-          <option value="10" selected>双休（周一到周五）</option>
-          <option value="7.5">大小周</option>
+          <option value="26.08">单休（周一到周六）</option>
+          <option value="21.75" selected>双休（周一到周五）</option>
+          <option value="23.92">大小周</option>
         </select>
       </div>
       <div class="form-group">
@@ -354,12 +347,13 @@
   let tipIdx = 0;
 
   // ─── 状态 ─────────────────────────────────────────────────────
-  let totalSeconds = 0;
-  let timer = null;
   let isPaused = false;
+  let rafId = null;
   let perSecond = 0;
   let dailyTotal = 0;
   let startTimestamp = null;
+  let pausedElapsed = 0;   // 累计已运行毫秒（排除暂停时段）
+  let pauseStart = null;   // 本次暂停开始时间
 
   function startCounting() {
     const salary = parseFloat(document.getElementById('monthlySalary').value);
@@ -370,10 +364,9 @@
       return;
     }
 
-    const restDays = parseFloat(document.getElementById('restType').value);  // 每月工作天数
+    const workDaysPerMonth = parseFloat(document.getElementById('restType').value);
     const workHours = parseFloat(document.getElementById('workHours').value);
 
-    const workDaysPerMonth = restDays;
     const dailySalary = salary / workDaysPerMonth;
     const hourlyRate = dailySalary / workHours;
     perSecond = hourlyRate / 3600;
@@ -388,38 +381,41 @@
     document.getElementById('formSection').style.display = 'none';
     document.getElementById('resultBox').classList.add('show');
 
-    // 开始计时
-    startTimestamp = Date.now();
-    totalSeconds = 0;
+    // 开始 rAF 循环
     isPaused = false;
-    tick();
-    timer = setInterval(tick, 1000);
+    pausedElapsed = 0;
+    pauseStart = null;
+    startTimestamp = performance.now();
+    rafId = requestAnimationFrame(frame);
     cycleTip();
   }
 
-  function tick() {
-    if (isPaused) return;
-    totalSeconds++;
-    const earned = perSecond * totalSeconds;
-    const el = document.getElementById('earnedAmount');
-    el.textContent = earned.toFixed(4);
-    el.classList.remove('pop');
-    void el.offsetWidth;
-    el.classList.add('pop');
+  function frame(now) {
+    if (!isPaused) {
+      const elapsedMs = (now - startTimestamp) - pausedElapsed;
+      const elapsedSec = elapsedMs / 1000;
+      const earned = perSecond * elapsedSec;
 
-    // 经过时间
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    document.getElementById('elapsedTime').textContent =
-      `(${h > 0 ? h + 'h ' : ''}${m}m ${s}s)`;
+      // 金额连续更新
+      document.getElementById('earnedAmount').textContent = earned.toFixed(4);
 
-    // 颜色随金额变绿
-    const pct = Math.min(earned / dailyTotal, 1);
-    const r = Math.round(46 + (255 - 46) * (1 - pct));
-    const g = Math.round(204 - (204 - 180) * pct);
-    document.getElementById('earnedAmount').style.color = `rgb(${r},${g},60)`;
-    document.querySelector('.earned-currency').style.color = `rgb(${r},${g},60)`;
+      // 经过时间
+      const totalSec = Math.floor(elapsedSec);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      document.getElementById('elapsedTime').textContent =
+        `(${h > 0 ? h + 'h ' : ''}${m}m ${s}s)`;
+
+      // 颜色随金额变化
+      const pct = Math.min(earned / dailyTotal, 1);
+      const r = Math.round(46 + (220 - 46) * (1 - pct));
+      const g = Math.round(204 - 40 * pct);
+      const colorStr = `rgb(${r},${g},60)`;
+      document.getElementById('earnedAmount').style.color = colorStr;
+      document.querySelector('.earned-currency').style.color = colorStr;
+    }
+    rafId = requestAnimationFrame(frame);
   }
 
   function togglePause() {
@@ -428,11 +424,17 @@
     const dot = document.getElementById('pulseDot');
     const statusText = document.getElementById('statusText');
     if (isPaused) {
+      pauseStart = performance.now();
       btn.textContent = '▶️ 继续打工';
       btn.className = 'btn btn-start';
       dot.classList.add('paused');
       statusText.textContent = '摸鱼中……（钱暂停涨了）';
     } else {
+      // 把本次暂停时长累加进 pausedElapsed
+      if (pauseStart !== null) {
+        pausedElapsed += performance.now() - pauseStart;
+        pauseStart = null;
+      }
       btn.textContent = '⏸ 摸鱼一下';
       btn.className = 'btn btn-stop';
       dot.classList.remove('paused');
@@ -441,10 +443,10 @@
   }
 
   function resetAll() {
-    clearInterval(timer);
-    timer = null;
-    totalSeconds = 0;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     isPaused = false;
+    pausedElapsed = 0;
+    pauseStart = null;
     document.getElementById('formSection').style.display = 'block';
     document.getElementById('resultBox').classList.remove('show');
     document.getElementById('earnedAmount').textContent = '0.00';
