@@ -236,6 +236,46 @@
       margin-top: 5px;
     }
 
+    /* ─── 移动端适配 ─────────────────────────── */
+    @media (max-width: 480px) {
+      body { padding: 16px; justify-content: flex-start; padding-top: 32px; }
+
+      .container {
+        padding: 24px 20px;
+        border-radius: 22px;
+        box-shadow: 4px 4px 0 #ffd43b;
+      }
+
+      h1 { font-size: 1.3rem; }
+      .subtitle { font-size: 0.82rem; margin-bottom: 20px; }
+
+      /* 两列改单列 */
+      .row { grid-template-columns: 1fr; gap: 0; }
+
+      /* 输入框更大，方便手指点击 */
+      input, select {
+        padding: 12px 14px;
+        font-size: 1rem;
+      }
+
+      /* 主金额字号缩小防溢出 */
+      .earned-amount { font-size: 2.4rem; }
+      .earned-currency { font-size: 1.2rem; }
+
+      /* stat 三格在小屏可能拥挤，字号缩小 */
+      .stat-value { font-size: 0.92rem; }
+      .stat-label { font-size: 0.68rem; }
+      .stat-item { padding: 8px 6px; }
+
+      /* 按钮更容易点击 */
+      .btn { padding: 16px; font-size: 1rem; }
+
+      /* 状态栏文字换行保护 */
+      .status-bar { flex-wrap: wrap; gap: 4px; font-size: 0.82rem; }
+
+      .fun-tip { font-size: 0.78rem; }
+    }
+
   </style>
 </head>
 <body>
