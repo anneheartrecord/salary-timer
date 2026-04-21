@@ -18,7 +18,7 @@
 
 ## 使用
 
-直接用浏览器打开 `index.html`，或访问 GitHub Pages 部署地址。
+直接用浏览器打开 `index.html`，或访问 https://anneheartrecord.github.io/salary-timer/。
 
 ## 本地运行
 
